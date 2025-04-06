@@ -2,9 +2,9 @@ import { Status } from '../enum/status.enum';
 
 export interface Server {
   id: number;
-  ipAddres: string;
+  ipAddress: string;
   name: string;
-  mamory: string;
+  memory: string;
   type: string;
   imageUrl: string;
   status: Status;
