@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { catchError, subscribeOn, tap } from 'rxjs/operators';
 
@@ -11,13 +11,14 @@ import { Status } from '../enum/status.enum';
   providedIn: 'root',
 })
 export class ServerService {
-  private readonly apiUrl = 'any';
+  private readonly apiUrl = 'http://localhost:8080';
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) {}
+  constructor() {}
 
   servers$ = <Observable<CustomResponse>>(
     this.http
-      .get<CustomResponse>(`${this.apiUrl}http://localhost:8080/server/list`)
+      .get<CustomResponse>(`${this.apiUrl}/server/list`)
       .pipe(tap(console.log), catchError(this.handleError))
   );
 
@@ -25,7 +26,7 @@ export class ServerService {
     <Observable<CustomResponse>>(
       this.http
         .post<CustomResponse>(
-          `${this.apiUrl}http://localhost:8080/server/save`,
+          `${this.apiUrl}/server/save`,
           server
         )
         .pipe(tap(console.log), catchError(this.handleError))
@@ -35,7 +36,7 @@ export class ServerService {
     <Observable<CustomResponse>>(
       this.http
         .get<CustomResponse>(
-          `${this.apiUrl}http://localhost:8080/server/ping/${ipAddress}`
+          `${this.apiUrl}/server/ping/${ipAddress}`
         )
         .pipe(tap(console.log), catchError(this.handleError))
     );
@@ -44,7 +45,7 @@ export class ServerService {
     <Observable<CustomResponse>>(
       this.http
         .delete<CustomResponse>(
-          `${this.apiUrl}http://localhost:8080/server/${id}`
+          `${this.apiUrl}/server/${id}`
         )
         .pipe(tap(console.log), catchError(this.handleError))
     );
@@ -70,6 +71,7 @@ export class ServerService {
         subscribeOn.complete();
       }
     ).pipe(tap(console.log), catchError(this.handleError));
+
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.log(error);
