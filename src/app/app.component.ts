@@ -13,7 +13,7 @@ import { CustomResponse } from './interface/custom-response';
 import { DataState } from './enum/data-state.enum';
 import { Status } from './enum/status.enum';
 import { Server } from './interface/server';
-import {NgForm} from '@angular/forms';
+import { NgForm } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
@@ -28,9 +28,11 @@ export class AppComponent implements OnInit {
   readonly DataState = DataState; // to be used in .html
   readonly Status = Status;
   private filterSubject = new BehaviorSubject<string>('');
+  private dataSubject = new BehaviorSubject<CustomResponse>(null);
   filterStatus$ = this.filterSubject.asObservable();
 
-  private dataSubject = new BehaviorSubject<CustomResponse>(null);
+  private isLoading = new BehaviorSubject<boolean>(false);//set value 
+  isLoading$ = this.isLoading.asObservable(); //in this way can be used in ui
 
   constructor(private server: ServerService) {}
 
@@ -73,13 +75,15 @@ export class AppComponent implements OnInit {
   }
 
   saveServer(serverForm: NgForm): void {
+    this.isLoading.next(true);
     this.appState$ = this.server.save$(serverForm.value as Server).pipe(
       map((response) => {
         this.dataSubject.next({
           ...response,
           data: {servers: [response.data.server, ...this.dataSubject.value.data.servers,], },
         }); 
-        document.getElementById('closeModule').click(); 
+        document.getElementById('closeModal').click(); 
+        this.isLoading.next(false);
         serverForm.resetForm({ status: this.Status.DOWN});
         return { dataState: DataState.LOADED_STATE, appData: response };
       }),
@@ -87,6 +91,7 @@ export class AppComponent implements OnInit {
         dataState: DataState.LOADED_STATE, appData: this.dataSubject.value,
       }),
       catchError((error: string) => {
+        this.isLoading.next(false);
         return of({ dataState: DataState.ERROR_STATE, error });
       })
     );
