@@ -40,7 +40,8 @@ export class AppComponent implements OnInit {
     this.appState$ = this.server.servers$.pipe(
       map((response) => {
         this.dataSubject.next(response); //1
-        return { dataState: DataState.LOADED_STATE, appData: response };
+        return { dataState: DataState.LOADED_STATE, appData: {...response, data: {servers:response.data.servers.reverse}}};
+        //give me everything from response and override with data in reverse way etc to get last added to be on a top
       }),
       startWith({ dataState: DataState.LOADING_STATE }),
       catchError((error: string) => {
