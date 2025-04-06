@@ -12,6 +12,8 @@ import { AppState } from './interface/app-state';
 import { CustomResponse } from './interface/custom-response';
 import { DataState } from './enum/data-state.enum';
 import { Status } from './enum/status.enum';
+import { Server } from './interface/server';
+import {NgForm} from '@angular/forms';
 
 @Component({
   selector: 'app-root',
@@ -50,9 +52,11 @@ export class AppComponent implements OnInit {
 
     this.appState$ = this.server.ping$(ipAddress).pipe(
       map((response) => {
-        const index =  this.dataSubject.value.data.servers.findIndex((s) => s.id === response.data.server.id);
+        const index = this.dataSubject.value.data.servers.findIndex(
+          (s) => s.id === response.data.server.id
+        );
         this.dataSubject.value.data.servers[index] = response.data.server; //whatever index found seted to response data server
-    
+
         this.filterSubject.next(''); //to stop showing the loading symbol
 
         return { dataState: DataState.LOADED_STATE, appData: response };
@@ -66,5 +70,42 @@ export class AppComponent implements OnInit {
         return of({ dataState: DataState.ERROR_STATE, error });
       })
     );
+  }
+
+  saveServer(serverForm: NgForm): void {
+    this.appState$ = this.server.save$(serverForm.value as Server).pipe(
+      map((response) => {
+        this.dataSubject.next({
+          ...response,
+          data: {servers: [response.data.server, ...this.dataSubject.value.data.servers,], },
+        }); 
+        document.getElementById('closeModule').click(); 
+        serverForm.resetForm({ status: this.Status.DOWN});
+        return { dataState: DataState.LOADED_STATE, appData: response };
+      }),
+      startWith({
+        dataState: DataState.LOADED_STATE, appData: this.dataSubject.value,
+      }),
+      catchError((error: string) => {
+        return of({ dataState: DataState.ERROR_STATE, error });
+      })
+    );
+  }
+
+  filterServers(status: Status): void {
+    this.appState$ = this.server
+      .filter$(status, this.dataSubject.value) //all data we already have in ui
+      .pipe(
+        map((response) => {
+          return { dataState: DataState.LOADED_STATE, appData: response }; //'response' is data from the filter
+        }),
+        startWith({
+          dataState: DataState.LOADED_STATE,
+          appData: this.dataSubject.value,
+        }),
+        catchError((error: string) => {
+          return of({ dataState: DataState.ERROR_STATE, error });
+        })
+      );
   }
 }
