@@ -31,7 +31,7 @@ export class AppComponent implements OnInit {
   private dataSubject = new BehaviorSubject<CustomResponse>(null);
   filterStatus$ = this.filterSubject.asObservable();
 
-  private isLoading = new BehaviorSubject<boolean>(false);//set value 
+  private isLoading = new BehaviorSubject<boolean>(false); //set value
   isLoading$ = this.isLoading.asObservable(); //in this way can be used in ui
 
   constructor(private server: ServerService) {}
@@ -40,7 +40,13 @@ export class AppComponent implements OnInit {
     this.appState$ = this.server.servers$.pipe(
       map((response) => {
         this.dataSubject.next(response); //1
-        return { dataState: DataState.LOADED_STATE, appData: {...response, data: {servers:response.data.servers.reverse}}};
+        return {
+          dataState: DataState.LOADED_STATE,
+          appData: {
+            ...response,
+            data: { servers: response.data.servers.reverse },
+          },
+        };
         //give me everything from response and override with data in reverse way etc to get last added to be on a top
       }),
       startWith({ dataState: DataState.LOADING_STATE }),
@@ -81,15 +87,21 @@ export class AppComponent implements OnInit {
       map((response) => {
         this.dataSubject.next({
           ...response,
-          data: {servers: [response.data.server, ...this.dataSubject.value.data.servers,], },
-        }); 
-        document.getElementById('closeModal').click(); 
+          data: {
+            servers: [
+              response.data.server,
+              ...this.dataSubject.value.data.servers,
+            ],
+          },
+        });
+        document.getElementById('closeModal').click();
         this.isLoading.next(false);
-        serverForm.resetForm({ status: this.Status.DOWN});
+        serverForm.resetForm({ status: this.Status.DOWN });
         return { dataState: DataState.LOADED_STATE, appData: response };
       }),
       startWith({
-        dataState: DataState.LOADED_STATE, appData: this.dataSubject.value,
+        dataState: DataState.LOADED_STATE,
+        appData: this.dataSubject.value,
       }),
       catchError((error: string) => {
         this.isLoading.next(false);
@@ -120,16 +132,36 @@ export class AppComponent implements OnInit {
       map((response) => {
         this.dataSubject.next({
           ...response,
-          data: { servers: this.dataSubject.value.data.servers.filter((s) => s.id !== server.id),}}
-        );
+          data: {
+            servers: this.dataSubject.value.data.servers.filter(
+              (s) => s.id !== server.id
+            ),
+          },
+        });
         return { dataState: DataState.LOADED_STATE, appData: response };
       }),
       startWith({
-        dataState: DataState.LOADED_STATE, appData: this.dataSubject.value,
+        dataState: DataState.LOADED_STATE,
+        appData: this.dataSubject.value,
       }), //1.1
       catchError((error: string) => {
         return of({ dataState: DataState.ERROR_STATE, error });
       })
     );
+  }
+
+  printReport(): void {
+  //  window.print(); will create a pdf
+
+    let dataType = 'application/vnd.ms-exel.sheet.marcoEnabled.12';
+    let tableSelect = document.getElementById('servers');
+    let tableHtml = tableSelect.outerHTML.replace(/ /g, '%20');
+    let downloadLink = document.createElement('a');
+    document.body.appendChild(downloadLink);
+
+    downloadLink.href = 'data:' + dataType + ', ' + tableHtml;
+    downloadLink.download = 'server-report.xls';
+
+    document.body.removeChild(downloadLink);
   }
 }
